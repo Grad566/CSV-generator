@@ -24,8 +24,10 @@ public final class CSVGenerator {
             for (var obj : data) {
                 writeObjToFile(fielPath, obj);
             }
-        } catch (IOException | IllegalAccessException e) {
-            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException("Error when writing data to file " + path, e);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException("Error of accessing object fields when writing to a file " + path, e);
         }
     }
 
