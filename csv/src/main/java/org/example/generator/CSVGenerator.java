@@ -2,9 +2,10 @@ package org.example.generator;
 
 import org.example.annotation.CSVColumn;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.Map;
 
@@ -15,19 +16,20 @@ public final class CSVGenerator {
         this.settings = settings;
     }
 
-    public <T> void writeObjToFile(List<T> data, String path) {
-        try (var writer = new BufferedWriter(new FileWriter(path))) {
-            writeHeaders(writer, data.getFirst());
+    public <T> void writeDataToFile(List<T> data, String path) {
+        var fielPath = Path.of(path);
+        try {
+            writeHeaders(fielPath, data.getFirst());
 
             for (var obj : data) {
-                writeDataToFile(writer, obj);
+                writeObjToFile(fielPath, obj);
             }
         } catch (IOException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private <T> void writeHeaders(BufferedWriter writer, T obj) throws IOException {
+    private <T> void writeHeaders(Path path, T obj) throws IOException {
         var fields = obj.getClass().getDeclaredFields();
         var sb = new StringBuilder();
 
@@ -38,11 +40,11 @@ public final class CSVGenerator {
             }
         }
 
-        writer.write(sb.substring(0, sb.length() - 1));
-        writer.newLine();
+        Files.writeString(path, sb.substring(0, sb.length() - 1) + System.lineSeparator(),
+                StandardOpenOption.CREATE);
     }
 
-    private <T> void writeDataToFile(BufferedWriter writer, T obj) throws IllegalAccessException, IOException {
+    private <T> void writeObjToFile(Path path, T obj) throws IllegalAccessException, IOException {
         var fields = obj.getClass().getDeclaredFields();
         var sb = new StringBuilder();
 
@@ -52,7 +54,7 @@ public final class CSVGenerator {
                 sb.append(field.get(obj)).append(", ");
             }
         }
-        writer.write(sb.substring(0, sb.length() - 1));
-        writer.newLine();
+        Files.writeString(path, sb.substring(0, sb.length() - 1) + System.lineSeparator(),
+                StandardOpenOption.APPEND);
     }
 }
