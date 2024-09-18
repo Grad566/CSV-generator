@@ -1,3 +1,0 @@
-name, age,
-Den, 2,
-Den2, 3,

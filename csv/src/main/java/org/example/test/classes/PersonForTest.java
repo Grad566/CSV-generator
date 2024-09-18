@@ -1,14 +1,14 @@
-package org.example;
+package org.example.test.classes;
 
 import org.example.annotation.CSVColumn;
 
-public class SimpleForTest {
+public class PersonForTest {
     @CSVColumn(header = "name")
     String name;
     @CSVColumn(header = "age")
     int age;
 
-    public SimpleForTest(String name, int age) {
+    public PersonForTest(String name, int age) {
         this.age = age;
         this.name = name;
     }

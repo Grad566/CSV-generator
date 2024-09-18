@@ -19,8 +19,13 @@ public final class CSVGenerator {
     }
 
     public <T> void writeDataToFile(List<T> data, String path) {
-        var fielPath = Path.of(path);
         try {
+            var fielPath = Path.of(path);
+
+            if (!Files.exists(fielPath)) {
+                Files.createFile(fielPath);
+            }
+
             if (includingHeaders) {
                 writeHeaders(fielPath, data.getFirst());
             }
@@ -46,8 +51,8 @@ public final class CSVGenerator {
             }
         }
 
-        Files.writeString(path, sb.substring(0, sb.length() - 1) + System.lineSeparator(),
-                StandardOpenOption.CREATE);
+        Files.writeString(path, sb.substring(0, sb.length() - 2) + System.lineSeparator(),
+                StandardOpenOption.APPEND);
     }
 
     private <T> void writeObjToFile(Path path, T obj) throws IllegalAccessException, IOException {
@@ -60,7 +65,7 @@ public final class CSVGenerator {
                 sb.append(field.get(obj)).append(delimiter);
             }
         }
-        Files.writeString(path, sb.substring(0, sb.length() - 1) + System.lineSeparator(),
+        Files.writeString(path, sb.substring(0, sb.length() - 2) + System.lineSeparator(),
                 StandardOpenOption.APPEND);
     }
 }
