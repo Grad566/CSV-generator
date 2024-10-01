@@ -24,31 +24,33 @@ class CSVGeneratorTest {
 
         csvGenerator.writeDataToFile(list, path);
 
-        List<String> res = Files.readAllLines(Path.of(path));
+        Path path1 = Path.of(path);
+        List<String> res = Files.readAllLines(path1);
         assertEquals("name, age", res.getFirst());
         assertEquals("John, 29", res.get(1));
         assertEquals("Alex, 5", res.get(2));
 
-        Files.delete(Path.of(path));
+        Files.delete(path1);
     }
 
     @Test
     public void testWriteDataToFileWithSettings() throws IOException, CSVGeneratorException {
-        CSVGenerator csvGenerator = new CSVGenerator(new HashMap<String, String>(Map.of(
+        CSVGenerator csvGenerator = new CSVGenerator(new HashMap<>(Map.of(
                 "delimiter", ": ",
                 "includingHeaders", "false"
         )));
         PersonForTest person1 = new PersonForTest("John", 29);
         PersonForTest person2 = new PersonForTest("Alex", 5);
-        List<PersonForTest> list = new ArrayList<PersonForTest>(List.of(person1, person2));
+        List<PersonForTest> list = new ArrayList<>(List.of(person1, person2));
         String path = "src/test/test_out2.txt";
 
         csvGenerator.writeDataToFile(list, path);
 
-        var res = Files.readAllLines(Path.of(path));
+        Path path1 = Path.of(path);
+        var res = Files.readAllLines(path1);
         assertEquals("John: 29", res.getFirst());
         assertEquals("Alex: 5", res.get(1));
 
-        Files.delete(Path.of(path));
+        Files.delete(path1);
     }
 }
