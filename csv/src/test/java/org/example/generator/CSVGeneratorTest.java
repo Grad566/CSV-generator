@@ -1,7 +1,10 @@
 package org.example.generator;
 
+import org.example.exception.CSVFileNotFoundException;
 import org.example.exception.CSVGeneratorException;
 import org.example.test.classes.PersonForTest;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -14,43 +17,73 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 class CSVGeneratorTest {
+    private CSVGenerator csvGenerator;
+    private String testFilePath;
+    private String testFilePathWithSettings;
+
+    @BeforeEach
+    public void setUp() {
+        csvGenerator = new CSVGenerator(new HashMap<>());
+        testFilePath = "src/test/test_out.txt";
+        testFilePathWithSettings = "src/test/test_out2.txt";
+    }
+
+    @AfterEach
+    public void tearDown() throws IOException {
+        Files.deleteIfExists(Path.of(testFilePath));
+        Files.deleteIfExists(Path.of(testFilePathWithSettings));
+    }
+
     @Test
     public void testWriteDataToFile() throws IOException, CSVGeneratorException {
-        CSVGenerator csvGenerator = new CSVGenerator(new HashMap<>());
         PersonForTest person1 = new PersonForTest("John", 29);
         PersonForTest person2 = new PersonForTest("Alex", 5);
         List<PersonForTest> list = new ArrayList<>(List.of(person1, person2));
-        String path = "src/test/test_out.txt";
 
-        csvGenerator.writeDataToFile(list, path);
+        csvGenerator.writeDataToFile(list, testFilePath);
 
-        Path path1 = Path.of(path);
-        List<String> res = Files.readAllLines(path1);
-        assertEquals("name, age", res.getFirst());
+        List<String> res = Files.readAllLines(Path.of(testFilePath));
+        assertEquals("name, age", res.get(0));
         assertEquals("John, 29", res.get(1));
         assertEquals("Alex, 5", res.get(2));
-
-        Files.delete(path1);
     }
 
     @Test
     public void testWriteDataToFileWithSettings() throws IOException, CSVGeneratorException {
-        CSVGenerator csvGenerator = new CSVGenerator(new HashMap<>(Map.of(
+        csvGenerator = new CSVGenerator(new HashMap<>(Map.of(
                 "delimiter", ": ",
                 "includingHeaders", "false"
         )));
         PersonForTest person1 = new PersonForTest("John", 29);
         PersonForTest person2 = new PersonForTest("Alex", 5);
         List<PersonForTest> list = new ArrayList<>(List.of(person1, person2));
-        String path = "src/test/test_out2.txt";
 
-        csvGenerator.writeDataToFile(list, path);
+        csvGenerator.writeDataToFile(list, testFilePathWithSettings);
 
-        Path path1 = Path.of(path);
-        var res = Files.readAllLines(path1);
-        assertEquals("John: 29", res.getFirst());
+        List<String> res = Files.readAllLines(Path.of(testFilePathWithSettings));
+        assertEquals("John: 29", res.get(0));
         assertEquals("Alex: 5", res.get(1));
-
-        Files.delete(path1);
     }
+
+    @Test
+    public void testWriteArrayToFile() throws CSVGeneratorException, IOException {
+        PersonForTest[] people = {
+                new PersonForTest("Alice", 30),
+                new PersonForTest("Bob", 25)
+        };
+
+        csvGenerator.writeDataToFile(people, testFilePath);
+
+        List<String> res = Files.readAllLines(Path.of(testFilePath));
+        assertEquals("name, age", res.get(0));
+        assertEquals("Alice, 30", res.get(1));
+        assertEquals("Bob, 25", res.get(2));
+    }
+
+    @Test
+    public void testWriteDataToFileThrowsCSVFileNotFoundException() {
+        assertThrows(CSVFileNotFoundException.class, () ->
+                csvGenerator.writeDataToFile(new ArrayList<>(), "invalid/path/to/file.txt"));
+    }
+
 }
