@@ -1,14 +1,22 @@
 package org.example.generator;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.example.annotation.CSVColumn;
+import org.example.exception.CSVAccessException;
+import org.example.exception.CSVFileNotFoundException;
+import org.example.exception.CSVGeneratorException;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.Map;
 
+@Getter
+@Setter
 public final class CSVGenerator {
     private String delimiter;
     private boolean includingHeaders;
@@ -18,9 +26,13 @@ public final class CSVGenerator {
         includingHeaders = Boolean.parseBoolean(settings.getOrDefault("includingHeaders", "true"));
     }
 
-    public <T> void writeDataToFile(List<T> data, String path) {
+    public <T> void writeDataToFile(T[] data, String path) throws CSVGeneratorException {
+        writeDataToFile(List.of(data), path);
+    }
+
+    public <T> void writeDataToFile(List<T> data, String path) throws CSVGeneratorException {
         try {
-            var fielPath = Path.of(path);
+            Path fielPath = Path.of(path);
 
             if (!Files.exists(fielPath)) {
                 Files.createFile(fielPath);
@@ -34,30 +46,34 @@ public final class CSVGenerator {
                 writeObjToFile(fielPath, obj);
             }
         } catch (IOException e) {
-            throw new RuntimeException("Error when writing data to file " + path, e);
+            throw new CSVFileNotFoundException(path);
         } catch (IllegalAccessException e) {
-            throw new RuntimeException("Error of accessing object fields when writing to a file " + path, e);
+            throw new CSVAccessException(path, e);
         }
     }
 
-    private <T> void writeHeaders(Path path, T obj) throws IOException {
-        var fields = obj.getClass().getDeclaredFields();
-        var sb = new StringBuilder();
+    private <T> void writeHeaders(Path path, T obj) throws CSVGeneratorException {
+        Field[] fields = obj.getClass().getDeclaredFields();
+        StringBuilder sb = new StringBuilder();
 
         for (var field : fields) {
             if (field.isAnnotationPresent(CSVColumn.class)) {
-                var annotation = field.getAnnotation(CSVColumn.class);
+                CSVColumn annotation = field.getAnnotation(CSVColumn.class);
                 sb.append(annotation.header()).append(delimiter);
             }
         }
 
-        Files.writeString(path, sb.substring(0, sb.length() - 2) + System.lineSeparator(),
-                StandardOpenOption.APPEND);
+        try {
+            Files.writeString(path, sb.substring(0, sb.length() - 2) + System.lineSeparator(),
+                    StandardOpenOption.APPEND);
+        } catch (IOException e) {
+            throw new CSVGeneratorException("Error writing headers to file: " + path, e);
+        }
     }
 
-    private <T> void writeObjToFile(Path path, T obj) throws IllegalAccessException, IOException {
-        var fields = obj.getClass().getDeclaredFields();
-        var sb = new StringBuilder();
+    private <T> void writeObjToFile(Path path, T obj) throws CSVGeneratorException, IllegalAccessException {
+        Field[] fields = obj.getClass().getDeclaredFields();
+        StringBuilder sb = new StringBuilder();
 
         for (var field : fields) {
             if (field.isAnnotationPresent(CSVColumn.class)) {
@@ -65,7 +81,11 @@ public final class CSVGenerator {
                 sb.append(field.get(obj)).append(delimiter);
             }
         }
-        Files.writeString(path, sb.substring(0, sb.length() - 2) + System.lineSeparator(),
-                StandardOpenOption.APPEND);
+        try {
+            Files.writeString(path, sb.substring(0, sb.length() - 2) + System.lineSeparator(),
+                    StandardOpenOption.APPEND);
+        } catch (IOException e) {
+            throw new CSVGeneratorException("Error writing object to file: " + path, e);
+        }
     }
 }
