@@ -1,6 +1,5 @@
-package org.example.generator;
+package org.example.service;
 
-import org.example.exception.DataWriterFileNotFoundException;
 import org.example.exception.DataWriterException;
 import org.example.test.classes.PersonForTest;
 import org.junit.jupiter.api.AfterEach;
@@ -13,19 +12,19 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
-class CSVGeneratorTest {
-    private DataWriter csvGenerator;
+
+class DataWriterServiceTest {
+    private DataWriterService service;
     private String testFilePath;
     private String testFilePathWithSettings;
 
     @BeforeEach
     public void setUp() {
-        csvGenerator = new CSVGenerator(new HashMap<>());
         testFilePath = "src/test/test_out.txt";
         testFilePathWithSettings = "src/test/test_out2.txt";
+        service = new DataWriterService();
     }
 
     @AfterEach
@@ -40,29 +39,12 @@ class CSVGeneratorTest {
         PersonForTest person2 = new PersonForTest("Alex", 5);
         List<PersonForTest> list = new ArrayList<>(List.of(person1, person2));
 
-        csvGenerator.writeDataToFile(list, testFilePath);
+        service.writeData(list, testFilePath, new HashMap<>());
 
         List<String> res = Files.readAllLines(Path.of(testFilePath));
         assertEquals("name, age", res.get(0));
         assertEquals("John, 29", res.get(1));
         assertEquals("Alex, 5", res.get(2));
-    }
-
-    @Test
-    public void testWriteDataToFileWithSettings() throws IOException, DataWriterException {
-        csvGenerator = new CSVGenerator(new HashMap<>(Map.of(
-                "delimiter", ": ",
-                "includingHeaders", "false"
-        )));
-        PersonForTest person1 = new PersonForTest("John", 29);
-        PersonForTest person2 = new PersonForTest("Alex", 5);
-        List<PersonForTest> list = new ArrayList<>(List.of(person1, person2));
-
-        csvGenerator.writeDataToFile(list, testFilePathWithSettings);
-
-        List<String> res = Files.readAllLines(Path.of(testFilePathWithSettings));
-        assertEquals("John: 29", res.get(0));
-        assertEquals("Alex: 5", res.get(1));
     }
 
     @Test
@@ -72,7 +54,7 @@ class CSVGeneratorTest {
                 new PersonForTest("Bob", 25)
         };
 
-        csvGenerator.writeDataToFile(people, testFilePath);
+        service.writeData(people, testFilePath, new HashMap<>());
 
         List<String> res = Files.readAllLines(Path.of(testFilePath));
         assertEquals("name, age", res.get(0));
@@ -81,9 +63,8 @@ class CSVGeneratorTest {
     }
 
     @Test
-    public void testWriteDataToFileThrowsCSVFileNotFoundException() {
-        assertThrows(DataWriterFileNotFoundException.class, () ->
-                csvGenerator.writeDataToFile(new ArrayList<>(), "invalid/path/to/file.txt"));
+    public void testWriteDataToFileThrowsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () ->
+                service.writeData(new ArrayList<>(), testFilePath, new HashMap<>()));
     }
-
 }

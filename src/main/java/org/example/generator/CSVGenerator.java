@@ -3,9 +3,9 @@ package org.example.generator;
 import lombok.Getter;
 import lombok.Setter;
 import org.example.annotation.CSVColumn;
-import org.example.exception.CSVAccessException;
-import org.example.exception.CSVFileNotFoundException;
-import org.example.exception.CSVGeneratorException;
+import org.example.exception.DataWriterAccessException;
+import org.example.exception.DataWriterFileNotFoundException;
+import org.example.exception.DataWriterException;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -17,7 +17,7 @@ import java.util.Map;
 
 @Getter
 @Setter
-public final class CSVGenerator {
+public final class CSVGenerator implements DataWriter {
     private String delimiter;
     private boolean includingHeaders;
 
@@ -26,11 +26,11 @@ public final class CSVGenerator {
         includingHeaders = Boolean.parseBoolean(settings.getOrDefault("includingHeaders", "true"));
     }
 
-    public <T> void writeDataToFile(T[] data, String path) throws CSVGeneratorException {
+    public <T> void writeDataToFile(T[] data, String path) throws DataWriterException {
         writeDataToFile(List.of(data), path);
     }
 
-    public <T> void writeDataToFile(List<T> data, String path) throws CSVGeneratorException {
+    public <T> void writeDataToFile(List<T> data, String path) throws DataWriterException {
         try {
             Path fielPath = Path.of(path);
 
@@ -46,13 +46,13 @@ public final class CSVGenerator {
                 writeObjToFile(fielPath, obj);
             }
         } catch (IOException e) {
-            throw new CSVFileNotFoundException(path);
+            throw new DataWriterFileNotFoundException(path);
         } catch (IllegalAccessException e) {
-            throw new CSVAccessException(path, e);
+            throw new DataWriterAccessException(path, e);
         }
     }
 
-    private <T> void writeHeaders(Path path, T obj) throws CSVGeneratorException {
+    private <T> void writeHeaders(Path path, T obj) throws DataWriterException {
         Field[] fields = obj.getClass().getDeclaredFields();
         StringBuilder sb = new StringBuilder();
 
@@ -67,11 +67,11 @@ public final class CSVGenerator {
             Files.writeString(path, sb.substring(0, sb.length() - 2) + System.lineSeparator(),
                     StandardOpenOption.APPEND);
         } catch (IOException e) {
-            throw new CSVGeneratorException("Error writing headers to file: " + path, e);
+            throw new DataWriterException("Error writing headers to file: " + path, e);
         }
     }
 
-    private <T> void writeObjToFile(Path path, T obj) throws CSVGeneratorException, IllegalAccessException {
+    private <T> void writeObjToFile(Path path, T obj) throws DataWriterException, IllegalAccessException {
         Field[] fields = obj.getClass().getDeclaredFields();
         StringBuilder sb = new StringBuilder();
 
@@ -85,7 +85,7 @@ public final class CSVGenerator {
             Files.writeString(path, sb.substring(0, sb.length() - 2) + System.lineSeparator(),
                     StandardOpenOption.APPEND);
         } catch (IOException e) {
-            throw new CSVGeneratorException("Error writing object to file: " + path, e);
+            throw new DataWriterException("Error writing object to file: " + path, e);
         }
     }
 }

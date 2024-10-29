@@ -3,9 +3,11 @@ package org.example.test.classes;
 import lombok.Getter;
 import lombok.Setter;
 import org.example.annotation.CSVColumn;
+import org.example.annotation.CSVExportable;
 
 @Getter
 @Setter
+@CSVExportable
 public class PersonForTest {
     @CSVColumn(header = "name")
     private String name;
